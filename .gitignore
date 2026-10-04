@@ -1,0 +1,23 @@
+# Secrets: API keys, OAuth client secret
+.env
+.env.*
+!.env.example
+
+# Local data: SQLite DB (channel + private analytics data), token-encryption key
+data/
+*.db
+*.db-journal
+secret.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Tooling / OS
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

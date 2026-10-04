@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+httpx
+pandas
+numpy
+anthropic
+python-dotenv
+cryptography

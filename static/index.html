@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Channel Intelligence</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23ff3b30'/><path d='M12 9l11 7-11 7z' fill='white'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<style>
+:root{
+  --bg:#f5f6f8;--surface:#fff;--surface2:#f9fafb;--fg:#0f172a;--fg2:#475569;--mut:#94a3b8;--line:#e5e7eb;
+  --brand:#ff3b30;--brand-soft:#fff1f0;--accent:#4f46e5;--ok:#059669;--ok-soft:#ecfdf5;--warn:#b45309;--warn-soft:#fffbeb;--bad:#dc2626;
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.06);--radius:14px;
+  --bar:#4f46e5;--bar-new:#cbd5e1;--grid:#eef0f3;
+}
+:root[data-theme=dark]{
+  --bg:#0b0d12;--surface:#13161d;--surface2:#181c25;--fg:#f1f5f9;--fg2:#a8b3c5;--mut:#64748b;--line:#232937;
+  --brand:#ff5a4f;--brand-soft:#2a1513;--accent:#818cf8;--ok:#34d399;--ok-soft:#10231c;--warn:#fbbf24;--warn-soft:#2a2210;--bad:#f87171;
+  --shadow:none;--bar:#818cf8;--bar-new:#3a4254;--grid:#1c212c;
+}
+*{box-sizing:border-box}
+html{color-scheme:light dark}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.55 Inter,system-ui,-apple-system,Segoe UI,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+/* top bar */
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:16px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.logo{width:28px;height:28px;border-radius:8px;background:var(--brand);display:grid;place-items:center}
+.logo svg{width:14px;height:14px;fill:#fff;margin-left:2px}
+form.search{flex:1;display:flex;gap:8px;max-width:640px;margin-left:auto}
+.field{flex:1;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:0 12px;height:38px;transition:.15s}
+.field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.field svg{width:16px;height:16px;stroke:var(--mut);fill:none;stroke-width:2;flex:none}
+.field input{flex:1;border:0;background:transparent;color:var(--fg);font:inherit;outline:0;min-width:0}
+.btn{height:38px;padding:0 16px;border:1px solid transparent;border-radius:10px;font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:.15s;white-space:nowrap}
+.btn.primary{background:var(--fg);color:var(--bg)}.btn.primary:hover{opacity:.88}
+.btn.ghost{background:transparent;color:var(--fg2);border-color:var(--line)}.btn.ghost:hover{background:var(--surface2);color:var(--fg)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.icon{width:38px;padding:0;justify-content:center}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.spin{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+main{padding:28px 0 80px}
+.hidden{display:none!important}
+
+/* hero / empty */
+.hero{text-align:center;padding:90px 0 40px}
+.hero h1{font-size:40px;line-height:1.1;letter-spacing:-.03em;margin:0 0 14px;font-weight:700}
+.hero h1 em{font-style:normal;color:var(--brand)}
+.hero p{color:var(--fg2);font-size:16px;max-width:560px;margin:0 auto 28px}
+.hero .features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px;text-align:left}
+.feat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.feat b{display:block;margin-bottom:4px}.feat span{color:var(--fg2);font-size:13px}
+.ico{width:34px;height:34px;border-radius:9px;background:var(--brand-soft);display:grid;place-items:center;margin-bottom:12px}
+.ico svg{width:17px;height:17px;stroke:var(--brand);fill:none;stroke-width:2}
+
+/* channel header */
+.chead{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#ff8a3d);color:#fff;display:grid;place-items:center;font-weight:700;font-size:22px}
+.chead h2{margin:0;font-size:22px;letter-spacing:-.02em}
+.chead .sub{color:var(--fg2);font-size:13px}
+.chead .grow{flex:1;min-width:200px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:500;background:var(--surface2);border:1px solid var(--line);color:var(--fg2)}
+.pill i{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;box-shadow:inset 0 -1px var(--line);margin-bottom:22px;overflow-x:auto;overflow-y:hidden}
+.tab{background:none;border:0;color:var(--fg2);font:inherit;font-weight:500;padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--fg)}.tab[aria-selected=true]{color:var(--fg);border-color:var(--brand);font-weight:600}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}
+.card h3{margin:0;font-size:15px;letter-spacing:-.01em}
+.card .hint{color:var(--mut);font-size:12.5px;margin-top:2px}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .l{color:var(--fg2);font-size:12.5px;font-weight:500}
+.kpi .v{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:12px;color:var(--mut)}
+.kpi .d.up,.kpi .d .up{color:var(--ok)}.kpi .d.down,.kpi .d .down{color:var(--bad)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.callouts{display:grid;gap:8px;margin-bottom:18px}
+.callout{display:flex;gap:10px;align-items:flex-start;background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:13px}
+.callout{display:block;padding:0}.callout summary{display:flex;gap:10px;align-items:center;padding:10px 14px;cursor:pointer;list-style:none}
+.callout summary::-webkit-details-marker{display:none}.callout .more{margin-left:auto;opacity:.75;font-size:12px}
+.callout ul{margin:0;padding:0 14px 12px 38px}.callout li{margin:3px 0}
+.callout svg{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:2}
+.chartbox{position:relative;height:300px}
+.seg{display:inline-flex;background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:2px}
+.seg button{border:0;background:none;color:var(--fg2);font:inherit;font-size:12.5px;font-weight:500;padding:4px 10px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--fg);box-shadow:var(--shadow)}
+
+/* video rows */
+.vlist{display:grid;gap:2px}
+.vrow{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:center;padding:8px;border-radius:10px;text-decoration:none}
+.vrow:hover{background:var(--surface2)}
+.thumb{width:96px;aspect-ratio:16/9;border-radius:7px;background:var(--surface2) center/cover;border:1px solid var(--line)}
+.vt{font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vm{font-size:12px;color:var(--mut)}
+.vr{text-align:right;font-variant-numeric:tabular-nums}
+.vr b{display:block;font-size:14px}.vr span{font-size:12px}
+.good{color:var(--ok)}.bad{color:var(--bad)}.neutral{color:var(--mut)}
+
+/* table */
+.tools{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.tools .field{max-width:320px}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;text-align:left;font-weight:600;color:var(--fg2);font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none;background:var(--surface)}
+th.n,td.n{text-align:right}
+th:hover{color:var(--fg)}th .ar{opacity:.6;margin-left:4px}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:hover td{background:var(--surface2)}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+td .cell{display:flex;align-items:center;gap:10px;min-width:260px}
+td .cell .thumb{width:64px;flex:none}
+td .cell a{text-decoration:none;font-weight:500;line-height:1.3}td .cell a:hover{text-decoration:underline}
+
+/* pattern rows */
+.prow{display:grid;grid-template-columns:minmax(150px,1.1fr) 60px 1.7fr 100px;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.prow:last-child{border:0}
+.prow .nm{font-weight:500}.prow .ct{color:var(--mut);font-size:12px}
+.gauge{position:relative;height:22px}
+.gauge .track{position:absolute;left:0;right:0;top:10px;height:2px;background:var(--line);border-radius:2px}
+.gauge .one{position:absolute;top:3px;bottom:3px;width:1px;background:var(--mut)}
+.gauge .ci{position:absolute;top:8px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--accent) 30%,transparent)}
+.gauge .pt{position:absolute;top:5px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--accent);border:2px solid var(--surface)}
+.gauge.inc .pt{background:var(--mut)}.gauge.inc .ci{background:color-mix(in srgb,var(--mut) 25%,transparent)}
+.badge{font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:99px;text-align:center;white-space:nowrap}
+.badge.sup{background:var(--ok-soft);color:var(--ok)}.badge.inc{background:var(--surface2);color:var(--mut);border:1px solid var(--line)}
+.axis{display:flex;justify-content:space-between;color:var(--mut);font-size:11px;padding:0 0 4px calc(1.1fr + 60px)}
+.plegend{display:flex;gap:16px;flex-wrap:wrap;color:var(--mut);font-size:12px;margin-bottom:6px}
+.group-title{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2);font-weight:600;margin:22px 0 4px}
+.group-title:first-of-type{margin-top:0}
+
+/* report */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--surface2);color:var(--fg2);border-radius:99px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.chip:hover{color:var(--fg);border-color:var(--mut)}
+.ask{display:flex;gap:8px;margin-bottom:18px}
+.md{line-height:1.7;max-width:760px}
+.md h1,.md h2,.md h3{letter-spacing:-.01em;margin:22px 0 8px}.md h1{font-size:20px}.md h2{font-size:16px}.md h3{font-size:14px}
+.md ul,.md ol{padding-left:20px}.md li{margin:4px 0}.md p{margin:8px 0}
+.md code{background:var(--surface2);padding:1px 5px;border-radius:5px;font-size:12.5px}
+.empty{color:var(--mut);padding:28px;text-align:center;border:1px dashed var(--line);border-radius:12px}
+
+/* history */
+.recent{margin-top:48px;text-align:left}
+.recent h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2);margin:0 0 12px}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.rcard{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;cursor:pointer;text-align:left;font:inherit;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.rcard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.rcard .avatar{width:40px;height:40px;font-size:17px;flex:none}
+.rcard b{display:block;line-height:1.3}.rcard span{color:var(--mut);font-size:12px}
+.snapbar{display:flex;align-items:center;gap:8px}
+select.sel{height:34px;border:1px solid var(--line);background:var(--surface2);color:var(--fg);border-radius:9px;padding:0 10px;font:inherit;font-size:13px;max-width:240px}
+.banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--brand-soft);border:1px solid color-mix(in srgb,var(--brand) 30%,transparent);color:var(--fg);border-radius:12px;padding:10px 14px;margin-bottom:18px;font-size:13px}
+.banner b{color:var(--brand)}.banner .btn{height:30px;padding:0 12px;margin-left:auto;font-size:12.5px}
+.rlist{display:grid;gap:2px}
+.ritem{display:flex;gap:12px;align-items:baseline;justify-content:space-between;padding:9px 10px;border-radius:9px;cursor:pointer;background:none;border:0;font:inherit;color:inherit;text-align:left;width:100%}
+.ritem:hover{background:var(--surface2)}.ritem .q{font-weight:500}.ritem .w{color:var(--mut);font-size:12px;white-space:nowrap}
+
+/* audience */
+.hbar{display:grid;grid-template-columns:150px 1fr 56px;gap:12px;align-items:center;padding:6px 0;font-size:13px}
+.hbar .t{height:10px;background:var(--surface2);border-radius:99px;overflow:hidden;display:flex}
+.hbar .t i{display:block;height:100%;background:var(--accent)}.hbar .t i.f{background:var(--brand)}.hbar .t i.o{background:var(--mut)}
+.hbar b{text-align:right;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--mut);font-size:12px;margin-bottom:6px}.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.setup{max-width:640px}.setup ol{padding-left:20px;color:var(--fg2)}.setup li{margin:6px 0}.setup code{background:var(--surface2);padding:1px 6px;border-radius:5px;font-size:12.5px;word-break:break-all}
+.unlock{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 18px}.unlock div{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--fg2)}.unlock b{color:var(--fg);display:block}
+.mini{display:grid;gap:2px}.mini .vrow{grid-template-columns:1fr auto}
+.link{background:none;border:0;color:var(--mut);font:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer;padding:0}
+@media(max-width:900px){.unlock{grid-template-columns:1fr}.hbar{grid-template-columns:100px 1fr 48px}}
+
+/* skeleton + toast */
+.sk{background:linear-gradient(90deg,var(--surface2),var(--line),var(--surface2));background-size:200% 100%;animation:sh 1.2s infinite;border-radius:10px}
+@keyframes sh{to{background-position:-200% 0}}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:12px;font-weight:500;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:50;max-width:90vw}
+#toast.err{background:var(--bad);color:#fff}
+
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.cols{grid-template-columns:1fr}.hero .features{grid-template-columns:1fr}.hero h1{font-size:30px}
+  .prow{grid-template-columns:1fr 90px;grid-template-areas:"a d" "g g";gap:6px}.prow>:nth-child(1){grid-area:a}.prow>:nth-child(2){display:none}.prow>:nth-child(3){grid-area:g}.prow>:nth-child(4){grid-area:d}
+  header.top .wrap{flex-wrap:wrap;height:auto;padding:10px 20px}.brand span{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><div class="logo"><svg viewBox="0 0 10 10"><path d="M0 0l10 5-10 5z"/></svg></div><span>Channel Intelligence</span></div>
+    <form class="search" id="f">
+      <label class="field"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="url" type="text" value="https://www.youtube.com/@X-Musik-x1f" placeholder="Paste a YouTube channel URL or @handle" aria-label="Channel URL" autocomplete="off"></label>
+      <button class="btn primary" id="go" type="submit">Analyze</button>
+      <button class="btn ghost icon" type="button" id="refresh" title="Force re-sync from YouTube (ignores cache)" aria-label="Force refresh"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/></svg></button>
+    </form>
+    <button class="btn ghost icon" id="theme" title="Toggle theme" aria-label="Toggle theme"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="landing" class="hero">
+    <h1>Know what's <em>working</em><br>on your channel.</h1>
+    <p>Paste a channel URL. Get an evidence-based read on top and weak videos, title and format patterns, and what to test next.</p>
+    <div class="features">
+      <div class="feat"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg></div><b>Honest numbers</b><span>All stats are computed by code, not guessed by AI, and compared against your own channel median.</span></div>
+      <div class="feat"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><b>Patterns with confidence</b><span>Every pattern shows its sample size and a 95% interval, so luck doesn't pass for insight.</span></div>
+      <div class="feat"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.5L20 9.3l-4 4 1 5.7-5-2.8-5 2.8 1-5.7-4-4 5.5-.8z"/></svg></div><b>Actionable next steps</b><span>An AI analyst turns the evidence into concrete, testable recommendations.</span></div>
+    </div>
+    <p style="margin-top:22px;font-size:13px;color:var(--mut)">Own the channel? <a href="/auth/google/start">Connect your Google account</a> for retention, watch time and audience data.</p>
+    <div class="recent hidden" id="recent"><h3>Previously analyzed</h3><div class="rgrid" id="rgrid"></div></div>
+  </section>
+
+  <section id="loading" class="hidden">
+    <div class="sk" style="height:64px;width:50%;margin-bottom:22px"></div>
+    <div class="kpis"><div class="sk" style="height:96px"></div><div class="sk" style="height:96px"></div><div class="sk" style="height:96px"></div><div class="sk" style="height:96px"></div></div>
+    <div class="sk" style="height:340px"></div>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="chead">
+      <div class="avatar" id="avatar"></div>
+      <div class="grow"><h2 id="ch"></h2><div class="sub" id="chsub"></div></div>
+      <div class="snapbar"><button class="btn ghost" id="axbtn" type="button" style="height:34px"></button><label class="hint" for="snap">Snapshot</label><select class="sel" id="snap" aria-label="Data snapshot"></select></div>
+    </div>
+    <div class="banner hidden" id="banner"><span>Viewing a <b>past snapshot</b> from <span id="bwhen"></span>. Numbers are exactly as they were then.</span><button class="btn ghost" id="tolatest" type="button">Back to latest</button></div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="overview">Overview</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="videos">All videos</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="patterns">Patterns</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="audience">Audience</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="reach">Reach</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="report">AI report</button>
+    </div>
+
+    <div id="t-overview">
+      <div class="kpis" id="kpis"></div>
+      <div class="callouts" id="warns"></div>
+      <div class="card">
+        <div class="card-head"><div><h3>Views per video</h3><div class="hint">Dashed line is the channel median. Lighter bars are under 30 days old and still accumulating views.</div></div>
+          <div class="seg" id="scale"><button aria-pressed="true" data-s="linear">Linear</button><button aria-pressed="false" data-s="logarithmic">Log</button></div></div>
+        <div class="chartbox"><canvas id="c1"></canvas></div>
+      </div>
+      <div class="cols">
+        <div class="card"><div class="card-head"><div><h3>Top performers</h3><div class="hint">Mature videos, vs channel median</div></div></div><div class="vlist" id="top"></div></div>
+        <div class="card"><div class="card-head"><div><h3>Needs attention</h3><div class="hint">Lowest-performing mature videos</div></div></div><div class="vlist" id="bot"></div></div>
+      </div>
+    </div>
+
+    <div id="t-videos" class="hidden">
+      <div class="card">
+        <div class="tools"><label class="field"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="vq" placeholder="Filter videos…" aria-label="Filter videos"></label><span class="hint" id="vcount"></span></div>
+        <div class="tbl"><table id="vt"></table></div>
+      </div>
+    </div>
+
+    <div id="t-patterns" class="hidden">
+      <div class="card">
+        <div class="card-head"><div><h3>What correlates with views</h3><div class="hint">Mature videos only. The dot is the group's median relative to the channel median; the bar is the 95% bootstrap interval. These are associations, not causes, and many are tested at once, so treat them as hypotheses.</div></div></div>
+        <div class="plegend"><span>◀ below channel median</span><span style="flex:1"></span><span>above channel median ▶</span></div>
+        <div id="pat"></div>
+      </div>
+    </div>
+
+    <div id="t-audience" class="hidden">
+      <div id="ax-locked" class="card hidden">
+        <h3>Unlock watch time, retention and audience data</h3>
+        <div class="hint">Connect the Google account that owns this channel to read your private YouTube Analytics. Read-only; you can disconnect anytime, which also deletes the data stored here.</div>
+        <div class="unlock"><div><b>Audience retention</b>Where viewers drop off in each video</div><div><b>Watch time &amp; duration</b>Hours watched, average view duration and %</div>
+          <div><b>Traffic sources</b>Search, suggested, browse, external…</div><div><b>Who watches</b>Age, gender, countries, subscriber conversion</div></div>
+        <div id="ax-action"></div>
+        <div class="hint" style="margin-top:12px">Not collected yet: thumbnail impressions and click-through rate. YouTube provides them for your own channel through a separate bulk Reporting API, which this app doesn't use yet.</div>
+      </div>
+      <div id="ax-data" class="hidden">
+        <div class="kpis" id="ax-kpis"></div>
+        <div class="card"><div class="card-head"><div><h3>Daily views &amp; watch time</h3><div class="hint" id="ax-asof"></div></div>
+          <div class="seg" id="ax-range"><button aria-pressed="false" data-d="28">28 days</button><button aria-pressed="true" data-d="90">90 days</button><button aria-pressed="false" data-d="365">1 year</button></div></div>
+          <div class="chartbox"><canvas id="c2"></canvas></div></div>
+        <div class="cols">
+          <div class="card"><div class="card-head"><div><h3>Where viewers come from</h3><div class="hint">Share of views, last 365 days</div></div></div><div id="ax-traffic"></div></div>
+          <div class="card"><div class="card-head"><div><h3>Who watches</h3><div class="hint">Share of viewers by age and gender</div></div></div>
+            <div class="legend"><span><i style="background:var(--accent)"></i>Male</span><span><i style="background:var(--brand)"></i>Female</span><span><i style="background:var(--mut)"></i>Other</span></div>
+            <div id="ax-age"></div><div class="group-title">Top countries</div><div id="ax-country"></div></div>
+        </div>
+        <div class="card"><div class="card-head"><div><h3>Audience retention</h3><div class="hint">Share of viewers still watching at each point of the video (can exceed 100% when sections are rewatched).</div></div>
+          <select class="sel" id="ax-vid" aria-label="Video"></select></div>
+          <div id="ax-ret-meta" class="legend"></div><div class="chartbox" style="height:260px"><canvas id="c3"></canvas></div></div>
+        <div class="cols">
+          <div class="card"><div class="card-head"><div><h3>Best-retained videos</h3><div class="hint" id="ax-rhint"></div></div></div><div class="mini" id="ax-best"></div>
+            <div class="group-title">Weakest retention</div><div class="mini" id="ax-worst"></div></div>
+          <div class="card"><div class="card-head"><div><h3>Subscribers per 1,000 views</h3><div class="hint">Which videos turn viewers into subscribers</div></div></div><div class="mini" id="ax-conv"></div>
+            <div style="margin-top:18px"><button class="link" id="ax-disc">Disconnect and delete stored private data</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="t-reach" class="hidden">
+      <div id="rc-info" class="card hidden"></div>
+      <div id="rc-data" class="hidden">
+        <div class="kpis" id="rc-kpis"></div>
+        <div class="card"><div class="card-head"><div><h3>Thumbnail impressions &amp; click-through rate</h3><div class="hint" id="rc-cover"></div></div></div>
+          <div class="chartbox"><canvas id="c4"></canvas></div></div>
+        <div class="cols">
+          <div class="card"><div class="card-head"><div><h3>Highest CTR</h3><div class="hint" id="rc-hint"></div></div></div><div class="mini" id="rc-best"></div>
+            <div class="group-title">Lowest CTR</div><div class="mini" id="rc-worst"></div></div>
+          <div class="card"><div class="card-head"><div><h3>How to read CTR</h3></div></div>
+            <div style="color:var(--fg2);font-size:13px;line-height:1.65">
+              <p style="margin:0 0 8px"><b style="color:var(--fg)">CTR</b> is the share of thumbnail impressions that became a click. Low CTR points at the title/thumbnail; low retention (Audience tab) points at the content itself.</p>
+              <p style="margin:0 0 8px">It falls naturally when YouTube shows a video to a broader audience, so a CTR drop alongside an impressions rise is not automatically bad.</p>
+              <p style="margin:0">Videos with fewer than 100 impressions are left out of the rankings: their CTR is mostly noise.</p></div>
+            <div style="margin-top:14px"><button class="btn ghost" id="rc-refresh" type="button" style="height:32px">Check for new reports</button></div></div>
+        </div>
+        <div class="card"><div class="card-head"><div><h3>All videos</h3><div class="hint">Over all days collected so far</div></div></div><div class="tbl"><table id="rc-table"></table></div></div>
+      </div>
+    </div>
+
+    <div id="t-report" class="hidden">
+      <div class="card">
+        <div class="card-head"><div><h3>AI analyst</h3><div class="hint" id="rsrc">Interprets the computed statistics. It cannot calculate or look up data itself.</div></div></div>
+        <div class="chips" id="chips">
+          <button class="chip">What should I post next?</button><button class="chip">Why do my best videos outperform?</button>
+          <button class="chip">What should I stop doing?</button><button class="chip">Which experiment should I run first?</button>
+        </div>
+        <form class="ask" id="q"><label class="field"><input id="question" placeholder="Ask about this channel, or leave blank for the full report" aria-label="Question"></label><button class="btn primary" id="rep" type="submit">Generate</button></form>
+        <div id="report" class="md"><div class="empty">Generate a report to see the analysis.</div></div>
+      </div>
+      <div class="card"><div class="card-head"><div><h3>Saved reports</h3><div class="hint">Every report you generate is kept, with the data snapshot it was based on.</div></div></div><div class="rlist" id="rlist"></div></div>
+    </div>
+  </section>
+</main>
+<div id="toast" class="hidden" role="status"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>n==null?'–':Number(n).toLocaleString();
+const compact=n=>n==null?'–':Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:1}).format(n);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dur=s=>{const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}h ${String(m).padStart(2,'0')}m`:m?`${m}m ${String(x).padStart(2,'0')}s`:`${x}s`};
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let S=null,channelId=null,asOf=null,chart=null,scale='linear',sortKey='published',sortDir=-1;
+const when=iso=>new Date(iso).toLocaleString([],{dateStyle:'medium',timeStyle:'short'});
+
+/* theme */
+const savedTheme=(()=>{try{return localStorage.getItem('theme')}catch(e){return null}})();
+if(savedTheme)document.documentElement.dataset.theme=savedTheme;
+else if(matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.dataset.theme='dark';
+$('theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}if(S){drawChart();if(S.analytics&&S.analytics.has_data){drawDaily();drawRetention()}drawReach()}};
+
+function toast(msg,err){const t=$('toast');t.textContent=msg;t.className=err?'err':'';clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='hidden',err?6000:2800)}
+async function api(path,body){
+  const r=await fetch(path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+  let j={};try{j=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(j.detail||`Request failed (${r.status})`);return j}
+
+function busy(on){$('go').disabled=on;$('refresh').disabled=on;$('go').innerHTML=on?'<span class="spin"></span>Analyzing':'Analyze'}
+async function run(force){
+  busy(true);$('landing').classList.add('hidden');$('app').classList.add('hidden');$('loading').classList.remove('hidden');
+  try{
+    const d=await api('/api/channels/analyze',{url:$('url').value.trim(),force});
+    show(d,null);
+    toast(d.sync.synced?`Synced ${d.sync.videos} videos from YouTube`:'Showing cached data');
+  }catch(e){fail(e)}
+  busy(false)}
+function fail(e){$('loading').classList.add('hidden');$(S?'app':'landing').classList.remove('hidden');toast(e.message,true)}
+async function show(d,snapshot){
+  S=d.stats;channelId=d.channel_id;asOf=snapshot;window.llm=d.llm_available;
+  render();$('loading').classList.add('hidden');$('app').classList.remove('hidden');window.scrollTo(0,0);
+  loadSnaps();loadReports();loadRecent();renderAudience()}
+/* open stored data (no YouTube call): a previous channel or an older snapshot */
+async function openStored(id,snapshot){
+  $('landing').classList.add('hidden');$('app').classList.add('hidden');$('loading').classList.remove('hidden');
+  try{show(await api(`/api/channels/${encodeURIComponent(id)}${snapshot?'?as_of='+encodeURIComponent(snapshot):''}`),snapshot)}catch(e){fail(e)}}
+async function loadSnaps(){
+  const snaps=await api(`/api/channels/${encodeURIComponent(channelId)}/snapshots`);
+  $('snap').innerHTML=snaps.map((s,i)=>`<option value="${esc(s.collected_at)}" ${(asOf?s.collected_at===asOf:i===0)?'selected':''}>${i===0?'Latest · ':''}${when(s.collected_at)}</option>`).join('');
+  $('snap').disabled=snaps.length<2;$('snap').title=snaps.length<2?'Sync again on another day to build history':'';
+  const past=asOf&&snaps.length&&asOf!==snaps[0].collected_at;
+  $('banner').classList.toggle('hidden',!past);$('bwhen').textContent=asOf?when(asOf):''}
+$('snap').onchange=e=>{const latest=e.target.selectedIndex===0;openStored(channelId,latest?null:e.target.value)};
+$('tolatest').onclick=()=>openStored(channelId,null);
+async function loadRecent(){
+  try{const cs=await api('/api/channels');$('recent').classList.toggle('hidden',!cs.length);
+    $('rgrid').innerHTML=cs.map(c=>`<button class="rcard" data-id="${esc(c.id)}" data-url="${esc(c.custom_url?'https://www.youtube.com/'+c.custom_url:'')}"><div class="avatar">${esc((c.title||'?').trim()[0].toUpperCase())}</div>
+      <div><b>${esc(c.title)}</b><span>${c.videos} videos · ${c.snapshots} snapshot${c.snapshots>1?'s':''} · ${when(c.last_synced)}</span></div></button>`).join('')}catch(e){}}
+$('rgrid').onclick=e=>{const c=e.target.closest('.rcard');if(!c)return;if(c.dataset.url)$('url').value=c.dataset.url;openStored(c.dataset.id,null)};
+document.querySelector('.brand').style.cursor='pointer';
+document.querySelector('.brand').onclick=()=>{$('app').classList.add('hidden');$('landing').classList.remove('hidden');loadRecent()};
+async function loadReports(){
+  const rs=await api(`/api/channels/${encodeURIComponent(channelId)}/reports`);
+  $('rlist').innerHTML=rs.length?rs.map(r=>`<button class="ritem" data-id="${r.id}"><span class="q">${esc(r.question||'Full channel report')}</span><span class="w">${r.source==='llm'?esc(r.model||'AI'):'Template'} · data from ${when(r.snapshot_at)} · written ${when(r.created_at)}</span></button>`).join(''):'<div class="empty">No saved reports yet.</div>'}
+$('rlist').onclick=async e=>{const b=e.target.closest('.ritem');if(!b)return;
+  try{const r=await api('/api/reports/'+b.dataset.id);$('report').innerHTML=DOMPurify.sanitize(marked.parse(r.markdown));$('report').scrollIntoView({behavior:'smooth'})}catch(x){toast(x.message,true)}};
+loadRecent();
+
+/* tabs */
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===name));
+  ['overview','videos','patterns','audience','reach','report'].forEach(t=>$('t-'+t).classList.toggle('hidden',t!==name));
+  if(name==='overview'&&S)drawChart();
+  if(name==='audience'&&S&&S.analytics&&S.analytics.has_data){drawDaily();drawRetention()}
+  if(name==='reach'&&S)drawReach()}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+
+function ratioCls(r){return r==null?'neutral':r>=1.25?'good':r<=0.75?'bad':'neutral'}
+function vlist(el,vs,empty){el.innerHTML=vs.length?vs.slice(0,6).map(v=>`
+  <a class="vrow" href="https://youtu.be/${esc(v.id)}" target="_blank" rel="noopener">
+    <div class="thumb" style="background-image:url('${esc(v.thumbnail||'')}')"></div>
+    <div><div class="vt">${esc(v.title)}</div><div class="vm">${esc(v.published)} · ${dur(v.duration_s)}</div></div>
+    <div class="vr"><b>${fmt(v.views)}</b><span class="${ratioCls(v.ratio_vs_median)}">${v.ratio_vs_median!=null?v.ratio_vs_median+'× median':''}</span></div></a>`).join(''):`<div class="empty">${empty}</div>`}
+
+function render(){
+  const c=S.channel,m=S.summary;
+  $('ch').textContent=c.title;$('avatar').textContent=(c.title||'?').trim()[0].toUpperCase();
+  $('chsub').textContent=[c.custom_url,c.country,c.published_at&&'since '+c.published_at.slice(0,4)].filter(Boolean).join(' · ');
+  const k=[
+    ['Subscribers',compact(c.subscriber_count),`${fmt(c.video_count)} videos on channel`],
+    ['Median views',fmt(m.median_views),`${m.median_views_per_day}/day · mean ${fmt(m.mean_views)}`],
+    ['Median engagement',m.median_engagement_rate==null?'–':(m.median_engagement_rate*100).toFixed(1)+'%','likes + comments per view'],
+    ['Total views',compact(m.total_views_in_videos),`across ${m.videos_analyzed} videos`],
+    ['Uploads, last 90 days',S.cadence.uploads_last_90d,S.cadence.median_gap_days!=null?`median gap ${S.cadence.median_gap_days} days`:''],
+    ['Median duration',dur(m.median_duration_s),`${Math.round(m.short_form_share*100)}% short-form (≤3 min)`],
+    ['Mature videos',m.mature_videos,'30+ days old, used for comparisons'],
+    ['Recent vs earlier',S.trend?(S.trend.change_pct>0?'+':'')+S.trend.change_pct+'%':'–',S.trend?`median ${fmt(S.trend.later_half_median_views)} vs ${fmt(S.trend.earlier_half_median_views)}`:'needs 10+ mature videos']];
+  $('kpis').innerHTML=k.map(([l,v,d],i)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d ${i===7&&S.trend?(S.trend.change_pct>0?'up':'down'):''}">${esc(d)}</div></div>`).join('');
+  $('warns').innerHTML=`<details class="callout" ${S.warnings.length<=1?'open':''}><summary><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg><b>Data notes (${S.warnings.length})</b><span class="more">what's limiting this analysis</span></summary><ul>${S.warnings.map(w=>`<li>${esc(w)}</li>`).join('')}</ul></details>`;
+  vlist($('top'),S.top_videos,'Not enough mature videos yet.');vlist($('bot'),S.bottom_videos,'Not enough mature videos yet.');
+  renderTable();renderPatterns();drawChart();
+  $('rsrc').textContent=window.llm?'Interprets the computed statistics. It cannot calculate or look up data itself.':'No ANTHROPIC_API_KEY configured: showing a deterministic template report instead of AI analysis.';
+  $('rep').textContent=window.llm?'Generate':'Generate report';
+}
+
+function drawChart(){
+  const vs=S.videos,med=S.summary.median_views;
+  if(chart)chart.destroy();
+  const tick=css('--mut'),grid=css('--grid');
+  chart=new Chart($('c1'),{data:{labels:vs.map(v=>v.published),datasets:[
+    {type:'bar',data:vs.map(v=>v.views),backgroundColor:vs.map(v=>v.age_days>=30?css('--bar'):css('--bar-new')),borderRadius:3,maxBarThickness:28,order:2},
+    {type:'line',data:vs.map(()=>med),borderColor:css('--brand'),borderDash:[5,4],borderWidth:1.5,pointRadius:0,order:1}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>vs[i[0].dataIndex].title,label:i=>i.datasetIndex?`Median ${fmt(med)}`:`${fmt(i.raw)} views · ${vs[i.dataIndex].published}`}}},
+      scales:{x:{ticks:{color:tick,maxTicksLimit:8,maxRotation:0},grid:{display:false}},y:{type:scale,beginAtZero:scale==='linear',min:scale==='logarithmic'?1:undefined,ticks:{color:tick,callback:v=>compact(v)},grid:{color:grid},border:{display:false}}}}});
+}
+$('scale').onclick=e=>{const b=e.target.closest('button');if(!b)return;scale=b.dataset.s;document.querySelectorAll('#scale button').forEach(x=>x.setAttribute('aria-pressed',x===b));drawChart()};
+
+/* all-videos table */
+const baseCols=[['title','Video'],['published','Published'],['views','Views','n'],['ratio_vs_median','× median','n'],['views_per_day','Views/day','n'],['engagement_rate','Engagement','n'],['duration_s','Duration','n']];
+const axCols=[['avg_view_pct','Avg viewed','n'],['watch_hours','Watch hrs','n'],['subs_gained','Subs +','n']];
+const rcCols=[['impressions','Impressions','n'],['ctr_pct','CTR','n']];
+function renderTable(){
+  const q=$('vq').value.toLowerCase(),hasAx=S.analytics&&S.analytics.has_data,hasRc=S.reach&&S.reach.state==='ready';
+  const cols=baseCols.concat(hasAx?axCols:[],hasRc?rcCols:[]);
+  const axCells=v=>(hasAx?`<td class="n">${v.avg_view_pct==null?'–':v.avg_view_pct+'%'}</td><td class="n">${v.watch_hours??'–'}</td><td class="n">${v.subs_gained??'–'}</td>`:'')
+    +(hasRc?`<td class="n">${v.impressions==null?'–':fmt(v.impressions)}</td><td class="n">${v.ctr_pct==null?'–':v.ctr_pct+'%'}</td>`:'');
+  let rows=S.videos.filter(v=>v.title.toLowerCase().includes(q));
+  rows.sort((a,b)=>{const x=a[sortKey],y=b[sortKey];return (x==null)-(y==null)||(x>y?1:x<y?-1:0)*sortDir});
+  $('vcount').textContent=`${rows.length} of ${S.videos.length} videos`;
+  $('vt').innerHTML=`<thead><tr>${cols.map(([k,l,n])=>`<th class="${n||''}" data-k="${k}">${l}<span class="ar">${sortKey===k?(sortDir>0?'↑':'↓'):''}</span></th>`).join('')}</tr></thead><tbody>`+rows.map(v=>`<tr>
+    <td><div class="cell"><div class="thumb" style="background-image:url('${esc(v.thumbnail||'')}')"></div><a href="https://youtu.be/${esc(v.id)}" target="_blank" rel="noopener">${esc(v.title)}</a></div></td>
+    <td>${esc(v.published)}</td><td class="n">${fmt(v.views)}</td><td class="n ${ratioCls(v.ratio_vs_median)}">${v.age_days>=30&&v.ratio_vs_median!=null?v.ratio_vs_median+'×':'<span class="neutral" title="Under 30 days old">new</span>'}</td>
+    <td class="n">${v.views_per_day}</td><td class="n">${v.engagement_rate==null?'–':(v.engagement_rate*100).toFixed(1)+'%'}</td><td class="n">${dur(v.duration_s)}</td>${axCells(v)}</tr>`).join('')+'</tbody>';
+  $('vt').querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;sortDir=sortKey===k?-sortDir:-1;sortKey=k;renderTable()});
+}
+$('vq').oninput=()=>S&&renderTable();
+
+/* patterns */
+const PN={duration:'Duration',publish_weekday:'Publish day',title_structure:'Title structure',title_terms:'Title keywords',tags:'Tags'};
+function pos(x){return Math.max(0,Math.min(100,(Math.log2(Math.max(x,.01))+2)/4*100))}  // 0.25× … 4× on a log axis
+function renderPatterns(){
+  const groups=Object.entries(S.patterns).filter(([,i])=>i.length);
+  $('pat').innerHTML=groups.length?groups.map(([g,items])=>`<div class="group-title">${PN[g]||g}</div>`+items.map(p=>{
+    const sup=p.evidence==='supported',lo=pos(p.ci95[0]),hi=pos(p.ci95[1]);
+    return `<div class="prow"><div class="nm">${esc(p.pattern)}</div><div class="ct">${p.videos} videos</div>
+      <div class="gauge ${sup?'':'inc'}" title="${p.ratio_vs_channel_median}× channel median (95% CI ${p.ci95[0]}–${p.ci95[1]}); median ${fmt(p.median_views)} views"><div class="track"></div><div class="one" style="left:50%"></div>
+        <div class="ci" style="left:${lo}%;width:${Math.max(hi-lo,1)}%"></div><div class="pt" style="left:${pos(p.ratio_vs_channel_median)}%"></div></div>
+      <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end"><b style="font-variant-numeric:tabular-nums">${p.ratio_vs_channel_median}×</b><span class="badge ${sup?'sup':'inc'}">${sup?'Supported':'Inconclusive'}</span></div></div>`}).join('')).join('')
+    :`<div class="empty"><b>Not enough data for pattern analysis yet.</b><br>Each pattern needs at least 5 videos in the group and 5 outside it, from videos older than 30 days. This channel has ${S.summary.mature_videos} mature videos.</div>`;
+}
+
+/* report */
+async function report(question){
+  showTab('report');$('rep').disabled=true;$('rep').innerHTML='<span class="spin"></span>Working';
+  $('report').innerHTML='<div class="sk" style="height:18px;width:60%;margin-bottom:10px"></div><div class="sk" style="height:14px;margin-bottom:8px"></div><div class="sk" style="height:14px;width:85%"></div>';
+  try{const d=await api(`/api/channels/${channelId}/report`,{question:question||null,as_of:asOf});
+    loadReports();
+    $('report').innerHTML=DOMPurify.sanitize(marked.parse(d.markdown));  // video titles are untrusted input
+    if(d.model)toast('Answered by '+d.model);
+    if(d.error)toast('AI unavailable, showing template report: '+d.error,true)}
+  catch(e){$('report').innerHTML=`<div class="empty">${esc(e.message)}</div>`}
+  $('rep').disabled=false;$('rep').textContent=window.llm?'Generate':'Generate report'}
+$('q').onsubmit=e=>{e.preventDefault();if(channelId)report($('question').value.trim())};
+$('chips').onclick=e=>{const c=e.target.closest('.chip');if(!c||!channelId)return;$('question').value=c.textContent;report(c.textContent)};
+
+$('f').onsubmit=e=>{e.preventDefault();run(false)};
+$('refresh').onclick=()=>run(true);
+
+/* ---------- Audience (owner-authorized YouTube Analytics) ---------- */
+let AX={configured:false,connected:false,reauth_required:false},c2=null,c3=null,axDays=90;
+const stack=(...o)=>o.map(([c,w])=>`<i class="${c}" style="width:${w}%"></i>`).join('');
+const delta=p=>p==null?'':`<span class="${p>=0?'up':'down'}">${p>=0?'+':''}${p}% vs previous 28 days</span>`;
+function axLabel(){
+  const b=$('axbtn');b.disabled=false;b.title='';
+  if(asOf){b.textContent='Analytics';b.disabled=true;b.title='Switch to the latest snapshot to sync';return}
+  b.textContent=AX.connected?'Sync Analytics':AX.reauth_required?'Reconnect Analytics':'Connect Analytics'}
+async function renderAudience(){
+  try{AX=await api(`/api/channels/${encodeURIComponent(channelId)}/analytics/status`)}catch(e){}
+  axLabel();renderReach();
+  const a=S.analytics||{has_data:false};
+  $('ax-data').classList.toggle('hidden',!a.has_data);$('ax-locked').classList.toggle('hidden',a.has_data);
+  if(!a.has_data){
+    $('ax-action').innerHTML=!AX.configured?`<div class="setup"><b>One-time setup (about 5 minutes)</b><ol>
+      <li>In <a href="https://console.cloud.google.com/apis/library" target="_blank" rel="noopener">Google Cloud Console</a>, enable <b>YouTube Analytics API</b> and <b>YouTube Data API v3</b>.</li>
+      <li>Configure the <b>OAuth consent screen</b> (External) and add your Google account as a test user.</li>
+      <li>Create credentials → <b>OAuth client ID</b> → type <b>Web application</b>. Add redirect URI <code>${location.origin}/auth/google/callback</code></li>
+      <li>Put <code>GOOGLE_CLIENT_ID</code> and <code>GOOGLE_CLIENT_SECRET</code> in your <code>.env</code> and restart the server.</li></ol></div>`
+      :AX.connected?`<button class="btn primary" id="ax-sync">Sync analytics now</button>`
+      :`<a class="btn primary" href="/auth/google/start" style="text-decoration:none">${AX.reauth_required?'Reconnect':'Connect YouTube Analytics'}</a>${AX.reauth_required?'<span class="hint" style="margin-left:10px">Your authorization expired or was revoked.</span>':''}`;
+    const s=$('ax-sync');if(s)s.onclick=syncAnalytics;return}
+  const p=a.periods,l=p&&p.last_28d,pc=p&&p.change_pct;
+  $('ax-asof').textContent=`Collected ${when(a.collected_at)} · data through ${p?p.through:'–'} (YouTube reports with a delay of a couple of days)`;
+  const rr=a.retention_rank;
+  const k=l?[['Views, last 28 days',fmt(l.views),delta(pc.views)],['Watch hours, last 28 days',fmt(l.watch_hours),delta(pc.watch_hours)],
+    ['Avg view duration',l.avg_view_duration_s==null?'–':dur(l.avg_view_duration_s),'last 28 days'],['Net subscribers',(l.subs_net>0?'+':'')+l.subs_net,'last 28 days'],
+    ['Median avg % viewed',rr.channel_median_avg_view_pct==null?'–':rr.channel_median_avg_view_pct+'%',`videos with ${rr.min_views}+ views`],
+    ['Views, last year',fmt(p.last_365d.views),`${fmt(p.last_365d.watch_hours)} watch hours`],['Likes, last year',fmt(p.last_365d.likes),`${fmt(p.last_365d.comments)} comments · ${fmt(p.last_365d.shares)} shares`],['Net subs, last year',(p.last_365d.subs_net>0?'+':'')+p.last_365d.subs_net,'']]:[];
+  $('ax-kpis').innerHTML=k.map(([l,v,d])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+  drawDaily();
+  $('ax-traffic').innerHTML=a.traffic.length?a.traffic.slice(0,8).map(t=>`<div class="hbar"><span>${esc(t.source)}</span><div class="t">${stack(['',t.views_share*100])}</div><b>${Math.round(t.views_share*100)}%</b></div>`).join(''):'<div class="empty">No traffic data yet.</div>';
+  $('ax-age').innerHTML=a.age_gender.length?a.age_gender.map(r=>{const m=r.male||0,f=r.female||0,o=r.user_specified||0;
+    return `<div class="hbar"><span>${esc(r.age)}</span><div class="t">${stack(['',m],['f',f],['o',o])}</div><b>${Math.round(m+f+o)}%</b></div>`}).join(''):'<div class="empty">Not enough viewers for demographics yet (YouTube hides small samples).</div>';
+  $('ax-country').innerHTML=a.countries.length?a.countries.slice(0,6).map(c=>`<div class="hbar"><span>${esc(c.country)}</span><div class="t">${stack(['',c.share*100])}</div><b>${Math.round(c.share*100)}%</b></div>`).join(''):'<div class="empty">No country data yet.</div>';
+  const vids=Object.entries(a.retention);
+  $('ax-vid').innerHTML=vids.map(([id,v])=>`<option value="${esc(id)}">${esc(v.title.slice(0,70))}</option>`).join('');
+  $('ax-vid').disabled=!vids.length;drawRetention();
+  const mini=(vs,f,empty)=>vs.length?vs.map(v=>`<a class="vrow" href="https://youtu.be/${esc(v.id)}" target="_blank" rel="noopener"><div><div class="vt">${esc(v.title)}</div><div class="vm">${fmt(v.a_views)} views</div></div><div class="vr"><b>${f(v)}</b></div></a>`).join(''):`<div class="empty">${empty}</div>`;
+  $('ax-rhint').textContent=`Average % of each video watched (videos with ${rr.min_views}+ views). Longer videos naturally score lower.`;
+  $('ax-best').innerHTML=mini(rr.best,v=>v.avg_view_pct+'%','Not enough data.');$('ax-worst').innerHTML=mini(rr.worst,v=>v.avg_view_pct+'%','Not enough data.');
+  $('ax-conv').innerHTML=mini(a.subscriber_conversion,v=>v.subs_per_1k_views+' / 1k','Not enough data.');
+}
+function drawDaily(){
+  const a=S.analytics;if(!a.daily||$('t-audience').classList.contains('hidden'))return;
+  const d=a.daily.slice(-axDays);if(c2)c2.destroy();const tick=css('--mut'),grid=css('--grid');
+  c2=new Chart($('c2'),{data:{labels:d.map(r=>r.day),datasets:[
+    {type:'bar',label:'Views',data:d.map(r=>r.views),backgroundColor:css('--bar'),borderRadius:2,yAxisID:'y',order:2},
+    {type:'line',label:'Watch hours',data:d.map(r=>r.watch_hours),borderColor:css('--brand'),backgroundColor:css('--brand'),borderWidth:2,pointRadius:0,tension:.25,yAxisID:'y1',order:1}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{color:tick,boxWidth:10,usePointStyle:true}}},
+      scales:{x:{ticks:{color:tick,maxTicksLimit:8,maxRotation:0},grid:{display:false}},y:{beginAtZero:true,ticks:{color:tick,callback:v=>compact(v)},grid:{color:grid},border:{display:false}},
+        y1:{position:'right',beginAtZero:true,ticks:{color:tick},grid:{display:false},border:{display:false}}}}})}
+function drawRetention(){
+  const a=S.analytics,id=$('ax-vid').value,v=a.retention[id];if(c3){c3.destroy();c3=null}
+  if(!v){$('ax-ret-meta').innerHTML='<span>Retention curves are fetched for your top videos only, and only when YouTube has enough data.</span>';return}
+  if($('t-audience').classList.contains('hidden'))return;
+  const kp=v.key_points,rel=v.avg_relative_retention,tag=rel>=.55?'above typical':rel<=.45?'below typical':'about typical';
+  $('ax-ret-meta').innerHTML=Object.entries(kp).map(([t,w])=>`<span><b style="color:var(--fg)">${Math.round(w*100)}%</b> still watching at ${t}</span>`).join('')+`<span>· vs similar-length YouTube videos: <b style="color:var(--fg)">${tag}</b></span>`;
+  const tick=css('--mut'),grid=css('--grid');
+  c3=new Chart($('c3'),{type:'line',data:{labels:v.curve.map(p=>Math.round(p[0]*100)+'%'),datasets:[{data:v.curve.map(p=>Math.round(p[1]*1000)/10),borderColor:css('--accent'),backgroundColor:css('--accent')+'22',fill:true,borderWidth:2,pointRadius:0,tension:.25}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>'At '+i[0].label+' of the video',label:i=>i.raw+'% still watching'}}},
+      scales:{x:{ticks:{color:tick,maxTicksLimit:10},grid:{display:false},title:{display:true,text:'Position in video',color:tick}},y:{beginAtZero:true,ticks:{color:tick,callback:v=>v+'%'},grid:{color:grid},border:{display:false}}}}})}
+$('ax-range').onclick=e=>{const b=e.target.closest('button');if(!b)return;axDays=+b.dataset.d;document.querySelectorAll('#ax-range button').forEach(x=>x.setAttribute('aria-pressed',x===b));drawDaily()};
+$('ax-vid').onchange=drawRetention;
+async function syncAnalytics(){
+  const b=$('axbtn');b.disabled=true;b.innerHTML='<span class="spin"></span>Syncing';
+  try{const d=await api(`/api/channels/${encodeURIComponent(channelId)}/analytics/sync`,{});
+    const errs=Object.keys(d.errors||{}).length;S=d.stats;asOf=null;window.llm=d.llm_available;render();loadSnaps();renderAudience();
+    toast(errs?`Analytics synced with ${errs} partial issue(s): ${Object.values(d.errors)[0]}`:'Analytics synced',!!errs)}
+  catch(e){toast(e.message,true);await renderAudience()}
+  axLabel()}
+$('axbtn').onclick=()=>{
+  if(AX.connected)return syncAnalytics();
+  if(!AX.configured){showTab('audience');return}
+  location.href='/auth/google/start'};
+$('ax-disc').onclick=async()=>{if(!confirm('Disconnect this channel and delete the private analytics data stored here?'))return;
+  try{await api(`/api/channels/${encodeURIComponent(channelId)}/analytics/disconnect`,{});const d=await api(`/api/channels/${encodeURIComponent(channelId)}`);S=d.stats;render();await renderAudience();toast('Disconnected; private data deleted')}catch(e){toast(e.message,true)}};
+
+/* ---------- Reach: thumbnail impressions + CTR (YouTube Reporting API) ---------- */
+let c4=null,rcErr=null;
+const pct1=x=>x==null?'–':(x*100).toFixed(1)+'%';
+function rcInfo(html){const el=$('rc-info');el.innerHTML=html;el.classList.toggle('hidden',!html);$('rc-data').classList.toggle('hidden',!!html)}
+function renderReach(){
+  const r=S&&S.reach;if(!r)return;
+  const err=rcErr?`<div class="callout" style="margin-top:12px"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg><span>${esc(rcErr)}</span></div>`:'';
+  const btn=(id,label)=>`<button class="btn primary" id="${id}" type="button">${label}</button>`;
+  if(!AX.connected){
+    rcInfo(`<h3>Thumbnail impressions &amp; click-through rate</h3><div class="hint" style="max-width:620px;margin:6px 0 14px">This data belongs to the channel owner, so you first need to connect your channel (Audience tab). Nothing else to set up on YouTube's side.</div><button class="btn primary" id="rc-goto" type="button">Go to Audience tab</button>`);
+    $('rc-goto').onclick=()=>showTab('audience');return}
+  if(r.state==='not_started'){
+    rcInfo(`<h3>Start collecting impressions and CTR</h3>
+      <div class="hint" style="max-width:640px;margin:6px 0 14px">YouTube delivers this data as daily report files rather than on demand. Starting collection creates a reporting job on your channel. YouTube then backfills about <b>30 days</b> of history and delivers the first files within <b>~48 hours</b>. Earlier history can't be recovered. The job only reads data.</div>
+      ${btn('rc-start','Start collecting')}${err}`);
+    $('rc-start').onclick=reachSync;return}
+  if(r.state==='waiting'){
+    rcInfo(`<h3>Collection is set up; waiting for YouTube's first report</h3>
+      <div class="hint" style="max-width:640px;margin:6px 0 14px">The job was created ${r.job_created?when(r.job_created):''}. The first files usually arrive within about 48 hours. This page fills in automatically each time you sync (Sync Analytics) or press the button below.${r.last_checked?` Last checked ${when(r.last_checked)}.`:''}</div>
+      ${btn('rc-check','Check now')}${err}`);
+    $('rc-check').onclick=reachSync;return}
+  rcInfo('');
+  const p=r.periods,a=p.last_28d,pr=p.previous_28d,ch=p.change_pct;
+  const d=(v,suffix,good)=>v==null?'vs previous 28 days: n/a':`<span class="${v>=0?'up':'down'}">${v>=0?'+':''}${v}${suffix}</span> vs previous 28 days`;
+  $('rc-kpis').innerHTML=[['Impressions, last 28 days',fmt(a.impressions),d(ch.impressions,'%')],['CTR, last 28 days',pct1(a.ctr),d(ch.ctr_points,' pts')],
+    ['Estimated clicks, last 28 days',fmt(a.clicks),'impressions × CTR'],['Overall CTR',pct1(r.overall.ctr),`${fmt(r.overall.impressions)} impressions in total`]]
+    .map(([l,v,x])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${x}</div></div>`).join('');
+  $('rc-cover').textContent=`Data from ${r.first_date} to ${r.last_date} (${r.days} day${r.days>1?'s':''}). YouTube reports with a delay of a couple of days.`;
+  const rk=r.ctr_rank;$('rc-hint').textContent=`Videos with ${rk.min_impressions}+ impressions (${rk.videos_with_enough_impressions} qualify)`;
+  const row=v=>`<a class="vrow" href="https://youtu.be/${esc(v.id)}" target="_blank" rel="noopener"><div><div class="vt">${esc(v.title)}</div><div class="vm">${fmt(v.impressions)} impressions</div></div><div class="vr"><b>${pct1(v.ctr)}</b></div></a>`;
+  $('rc-best').innerHTML=rk.best.length?rk.best.map(row).join(''):'<div class="empty">No video has enough impressions yet.</div>';
+  $('rc-worst').innerHTML=rk.worst.length?rk.worst.map(row).join(''):'<div class="empty">No video has enough impressions yet.</div>';
+  $('rc-table').innerHTML='<thead><tr><th>Video</th><th class="n">Impressions</th><th class="n">CTR</th><th class="n">Est. clicks</th></tr></thead><tbody>'+r.videos_table.map(v=>
+    `<tr><td><a href="https://youtu.be/${esc(v.id)}" target="_blank" rel="noopener" style="text-decoration:none;font-weight:500">${esc(v.title)}</a></td><td class="n">${fmt(v.impressions)}</td><td class="n">${pct1(v.ctr)}${v.impressions<rk.min_impressions?' <span class="neutral" title="Too few impressions to trust">*</span>':''}</td><td class="n">${fmt(v.clicks)}</td></tr>`).join('')+'</tbody>';
+  $('rc-refresh').onclick=reachSync;drawReach()}
+function drawReach(){
+  const r=S&&S.reach;if(!r||r.state!=='ready'||$('t-reach').classList.contains('hidden'))return;
+  if(c4)c4.destroy();const tick=css('--mut'),grid=css('--grid');
+  c4=new Chart($('c4'),{data:{labels:r.daily.map(x=>x.day),datasets:[
+    {type:'bar',label:'Impressions',data:r.daily.map(x=>x.impressions),backgroundColor:css('--bar'),borderRadius:2,yAxisID:'y',order:2},
+    {type:'line',label:'CTR %',data:r.daily.map(x=>x.ctr==null?null:Math.round(x.ctr*1000)/10),borderColor:css('--brand'),backgroundColor:css('--brand'),borderWidth:2,pointRadius:r.daily.length<20?3:0,tension:.25,yAxisID:'y1',order:1}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{color:tick,boxWidth:10,usePointStyle:true}}},
+      scales:{x:{ticks:{color:tick,maxTicksLimit:8,maxRotation:0},grid:{display:false}},y:{beginAtZero:true,ticks:{color:tick,callback:v=>compact(v)},grid:{color:grid},border:{display:false}},
+        y1:{position:'right',beginAtZero:true,ticks:{color:tick,callback:v=>v+'%'},grid:{display:false},border:{display:false}}}}})}
+async function reachSync(){
+  const b=$('rc-start')||$('rc-check')||$('rc-refresh');if(b){b.disabled=true;b.innerHTML='<span class="spin"></span>Working'}
+  try{const d=await api(`/api/channels/${encodeURIComponent(channelId)}/reach/sync`,{});rcErr=null;S=d.stats;render();renderReach();
+    toast(d.job_created?'Collection started. First reports arrive within ~48 hours':d.reports_ingested?`Loaded ${d.reports_ingested} new report${d.reports_ingested>1?'s':''}`:'No new reports yet')}
+  catch(e){rcErr=e.message;toast(e.message,true);renderReach()}}
+
+/* return from Google's consent screen */
+(async()=>{const q=new URLSearchParams(location.search);if(![...q.keys()].length)return;history.replaceState(null,'',location.pathname);
+  if(q.get('auth_error'))return toast(q.get('auth_error'),true);
+  if(q.get('connected')){await openStored(q.get('connected'),null);showTab('audience');await syncAnalytics()}})();
+</script>
+</body>
+</html>

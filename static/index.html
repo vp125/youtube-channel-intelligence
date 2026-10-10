@@ -181,6 +181,26 @@ select.sel{height:34px;border:1px solid var(--line);background:var(--surface2);c
 .link{background:none;border:0;color:var(--mut);font:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer;padding:0}
 @media(max-width:900px){.unlock{grid-template-columns:1fr}.hbar{grid-template-columns:100px 1fr 48px}}
 
+/* deep dive */
+.fnd{border:1px solid var(--line);border-left-width:4px;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--surface)}
+.fnd.high{border-left-color:var(--bad)}.fnd.medium{border-left-color:var(--warn)}.fnd.low{border-left-color:var(--mut)}.fnd.info{border-left-color:var(--accent)}
+.fnd summary{cursor:pointer;list-style:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.fnd summary::-webkit-details-marker{display:none}
+.fnd .t{font-weight:600}.fnd ul{margin:8px 0 6px;padding-left:20px;color:var(--fg2)}.fnd .imp{color:var(--fg);margin:6px 0 0;font-size:13px}
+.tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);color:var(--fg2);white-space:nowrap}
+.tag.high{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad);border-color:transparent}.tag.medium{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.tag.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.funnel{display:grid;grid-template-columns:repeat(4,1fr);gap:0;align-items:stretch}
+.fstep{background:var(--surface2);border:1px solid var(--line);padding:14px;position:relative}
+.fstep:first-child{border-radius:12px 0 0 12px}.fstep:last-child{border-radius:0 12px 12px 0}.fstep+.fstep{border-left:0}
+.fstep b{display:block;font-size:24px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.fstep span{color:var(--fg2);font-size:12px}
+.fstep em{display:inline-block;margin-top:8px;font-style:normal;font-size:11px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:1px 8px}
+.fstep em:empty{display:none}
+.ci{position:relative;height:14px;min-width:120px;background:var(--surface2);border-radius:99px}.ci i{position:absolute;top:4px;height:6px;border-radius:99px;background:color-mix(in srgb,var(--accent) 35%,transparent)}.ci u{position:absolute;top:1px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--accent);border:2px solid var(--surface)}
+.ci.weak i{background:color-mix(in srgb,var(--mut) 30%,transparent)}.ci.weak u{background:var(--mut)}
+.ddsub{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2);font-weight:600;margin:20px 0 8px}
+.bad-t{color:var(--bad)}.ok-t{color:var(--ok)}
+@media(max-width:900px){.funnel{grid-template-columns:1fr 1fr}.fstep{border-radius:12px!important;border-left:1px solid var(--line)!important;margin:3px}.fstep em{display:none}}
+
 /* skeleton + toast */
 .sk{background:linear-gradient(90deg,var(--surface2),var(--line),var(--surface2));background-size:200% 100%;animation:sh 1.2s infinite;border-radius:10px}
 @keyframes sh{to{background-position:-200% 0}}
@@ -239,6 +259,7 @@ select.sel{height:34px;border:1px solid var(--line);background:var(--surface2);c
       <button class="tab" role="tab" aria-selected="false" data-tab="patterns">Patterns</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="audience">Audience</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="reach">Reach</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="deepdive">Deep dive</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="report">AI report</button>
     </div>
 
@@ -317,10 +338,21 @@ select.sel{height:34px;border:1px solid var(--line);background:var(--surface2);c
               <p style="margin:0 0 8px"><b style="color:var(--fg)">CTR</b> is the share of thumbnail impressions that became a click. Low CTR points at the title/thumbnail; low retention (Audience tab) points at the content itself.</p>
               <p style="margin:0 0 8px">It falls naturally when YouTube shows a video to a broader audience, so a CTR drop alongside an impressions rise is not automatically bad.</p>
               <p style="margin:0">Videos with fewer than 100 impressions are left out of the rankings: their CTR is mostly noise.</p></div>
-            <div style="margin-top:14px"><button class="btn ghost" id="rc-refresh" type="button" style="height:32px">Check for new reports</button></div></div>
+            <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" id="rc-dive" type="button" style="height:34px">Deep dive analysis →</button><button class="btn ghost" id="rc-refresh" type="button" style="height:34px">Check for new reports</button></div></div>
         </div>
         <div class="card"><div class="card-head"><div><h3>All videos</h3><div class="hint">Over all days collected so far</div></div></div><div class="tbl"><table id="rc-table"></table></div></div>
       </div>
+    </div>
+
+    <div id="t-deepdive" class="hidden">
+      <div class="card">
+        <div class="card-head"><div><h3>Deep dive analysis</h3>
+          <div class="hint" style="max-width:660px">A full diagnosis from your data: where the real constraint is, what separates reach, packaging and content problems, how reliable each number is, and what to test next. Findings are computed by code; the AI then reads them together with your actual thumbnails and writes the recommendations.</div></div>
+          <button class="btn primary" id="dd-ai" type="button">Write AI deep dive</button></div>
+        <div class="legend" id="dd-have"></div>
+      </div>
+      <div class="card hidden" id="dd-ai-card"><div class="card-head"><div><h3>AI deep dive</h3><div class="hint" id="dd-ai-meta"></div></div></div><div id="dd-ai-out" class="md"></div></div>
+      <div id="dd-body"></div>
     </div>
 
     <div id="t-report" class="hidden">
@@ -353,7 +385,7 @@ const when=iso=>new Date(iso).toLocaleString([],{dateStyle:'medium',timeStyle:'s
 const savedTheme=(()=>{try{return localStorage.getItem('theme')}catch(e){return null}})();
 if(savedTheme)document.documentElement.dataset.theme=savedTheme;
 else if(matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.dataset.theme='dark';
-$('theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}if(S){drawChart();if(S.analytics&&S.analytics.has_data){drawDaily();drawRetention()}drawReach()}};
+$('theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}if(S){drawChart();if(S.analytics&&S.analytics.has_data){drawDaily();drawRetention()}drawReach();if(DD)drawDDVis()}};
 
 function toast(msg,err){const t=$('toast');t.textContent=msg;t.className=err?'err':'';clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='hidden',err?6000:2800)}
 async function api(path,body){
@@ -372,7 +404,7 @@ async function run(force){
   busy(false)}
 function fail(e){$('loading').classList.add('hidden');$(S?'app':'landing').classList.remove('hidden');toast(e.message,true)}
 async function show(d,snapshot){
-  S=d.stats;channelId=d.channel_id;asOf=snapshot;window.llm=d.llm_available;
+  S=d.stats;channelId=d.channel_id;asOf=snapshot;window.llm=d.llm_available;DD=null;
   render();$('loading').classList.add('hidden');$('app').classList.remove('hidden');window.scrollTo(0,0);
   loadSnaps();loadReports();loadRecent();renderAudience()}
 /* open stored data (no YouTube call): a previous channel or an older snapshot */
@@ -398,16 +430,19 @@ async function loadReports(){
   const rs=await api(`/api/channels/${encodeURIComponent(channelId)}/reports`);
   $('rlist').innerHTML=rs.length?rs.map(r=>`<button class="ritem" data-id="${r.id}"><span class="q">${esc(r.question||'Full channel report')}</span><span class="w">${r.source==='llm'?esc(r.model||'AI'):'Template'} · data from ${when(r.snapshot_at)} · written ${when(r.created_at)}</span></button>`).join(''):'<div class="empty">No saved reports yet.</div>'}
 $('rlist').onclick=async e=>{const b=e.target.closest('.ritem');if(!b)return;
-  try{const r=await api('/api/reports/'+b.dataset.id);$('report').innerHTML=DOMPurify.sanitize(marked.parse(r.markdown));$('report').scrollIntoView({behavior:'smooth'})}catch(x){toast(x.message,true)}};
+  try{const r=await api('/api/reports/'+b.dataset.id);const html=DOMPurify.sanitize(marked.parse(r.markdown));
+    if(r.kind==='deep_dive'){showTab('deepdive');$('dd-ai-out').innerHTML=html;$('dd-ai-meta').textContent=`${r.model} · saved ${when(r.created_at)} · data from ${when(r.snapshot_at)}`;$('dd-ai-card').classList.remove('hidden');$('dd-ai-card').scrollIntoView({behavior:'smooth'})}
+    else{showTab('report');$('report').innerHTML=html;$('report').scrollIntoView({behavior:'smooth'})}}catch(x){toast(x.message,true)}};
 loadRecent();
 
 /* tabs */
 function showTab(name){
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===name));
-  ['overview','videos','patterns','audience','reach','report'].forEach(t=>$('t-'+t).classList.toggle('hidden',t!==name));
+  ['overview','videos','patterns','audience','reach','deepdive','report'].forEach(t=>$('t-'+t).classList.toggle('hidden',t!==name));
   if(name==='overview'&&S)drawChart();
   if(name==='audience'&&S&&S.analytics&&S.analytics.has_data){drawDaily();drawRetention()}
-  if(name==='reach'&&S)drawReach()}
+  if(name==='reach'&&S)drawReach();
+  if(name==='deepdive'&&S)loadDeepDive()}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 
 function ratioCls(r){return r==null?'neutral':r>=1.25?'good':r<=0.75?'bad':'neutral'}
@@ -418,6 +453,7 @@ function vlist(el,vs,empty){el.innerHTML=vs.length?vs.slice(0,6).map(v=>`
     <div class="vr"><b>${fmt(v.views)}</b><span class="${ratioCls(v.ratio_vs_median)}">${v.ratio_vs_median!=null?v.ratio_vs_median+'× median':''}</span></div></a>`).join(''):`<div class="empty">${empty}</div>`}
 
 function render(){
+  DD=null;  // any change to S invalidates the cached deep dive
   const c=S.channel,m=S.summary;
   $('ch').textContent=c.title;$('avatar').textContent=(c.title||'?').trim()[0].toUpperCase();
   $('chsub').textContent=[c.custom_url,c.country,c.published_at&&'since '+c.published_at.slice(0,4)].filter(Boolean).join(' · ');
@@ -614,7 +650,7 @@ function renderReach(){
   $('rc-worst').innerHTML=rk.worst.length?rk.worst.map(row).join(''):'<div class="empty">No video has enough impressions yet.</div>';
   $('rc-table').innerHTML='<thead><tr><th>Video</th><th class="n">Impressions</th><th class="n">CTR</th><th class="n">Est. clicks</th></tr></thead><tbody>'+r.videos_table.map(v=>
     `<tr><td><a href="https://youtu.be/${esc(v.id)}" target="_blank" rel="noopener" style="text-decoration:none;font-weight:500">${esc(v.title)}</a></td><td class="n">${fmt(v.impressions)}</td><td class="n">${pct1(v.ctr)}${v.impressions<rk.min_impressions?' <span class="neutral" title="Too few impressions to trust">*</span>':''}</td><td class="n">${fmt(v.clicks)}</td></tr>`).join('')+'</tbody>';
-  $('rc-refresh').onclick=reachSync;drawReach()}
+  $('rc-refresh').onclick=reachSync;$('rc-dive').onclick=()=>{showTab('deepdive');writeDeepDive()};drawReach()}
 function drawReach(){
   const r=S&&S.reach;if(!r||r.state!=='ready'||$('t-reach').classList.contains('hidden'))return;
   if(c4)c4.destroy();const tick=css('--mut'),grid=css('--grid');
@@ -629,6 +665,88 @@ async function reachSync(){
   try{const d=await api(`/api/channels/${encodeURIComponent(channelId)}/reach/sync`,{});rcErr=null;S=d.stats;render();renderReach();
     toast(d.job_created?'Collection started. First reports arrive within ~48 hours':d.reports_ingested?`Loaded ${d.reports_ingested} new report${d.reports_ingested>1?'s':''}`:'No new reports yet')}
   catch(e){rcErr=e.message;toast(e.message,true);renderReach()}}
+
+/* ---------- Deep dive: deterministic diagnosis + AI write-up ---------- */
+let DD=null,ddChart=null,ddBusy=false;
+const pc=x=>x==null?'–':x+'%';
+const ddCard=(t,h,inner)=>`<div class="card"><div class="card-head"><div><h3>${t}</h3>${h?`<div class="hint" style="max-width:720px">${h}</div>`:''}</div></div>${inner}</div>`;
+const tierTag=t=>`<span class="tag ${t==='solid'?'ok':t==='indicative'?'medium':''}">${t}</span>`;
+const ciBar=(lo,hi,pt,weak)=>{const sc=x=>Math.max(0,Math.min(100,x/40*100));return `<div class="ci ${weak?'weak':''}" title="95% range ${pc(lo)}–${pc(hi)}"><i style="left:${sc(lo)}%;width:${Math.max(sc(hi)-sc(lo),1)}%"></i><u style="left:${sc(pt)}%"></u></div>`};
+async function loadDeepDive(force){
+  if(!channelId)return;
+  if(DD&&!force){renderDD();return}
+  $('dd-body').innerHTML='<div class="sk" style="height:90px;margin-bottom:14px"></div><div class="sk" style="height:260px"></div>';
+  try{const d=await api(`/api/channels/${encodeURIComponent(channelId)}/deepdive${asOf?'?as_of='+encodeURIComponent(asOf):''}`);DD=d.deepdive;window.llm=d.llm_available;renderDD()}
+  catch(e){$('dd-body').innerHTML=`<div class="empty">${esc(e.message)}</div>`}}
+function renderDD(){
+  const d=DD,m=d.meta;
+  $('dd-have').innerHTML=[['Public data',m.public],['Analytics (retention, traffic)',m.analytics],['Reach (impressions, CTR)',m.reach],['Source & device breakdown',m.breakdown]]
+    .map(([l,on])=>`<span><i style="background:var(${on?'--ok':'--mut'})"></i>${l}${on?'':' – not available yet'}</span>`).join('');
+  $('dd-ai').textContent=window.llm?'Write AI deep dive':'Write AI deep dive (needs ANTHROPIC_API_KEY)';$('dd-ai').disabled=ddBusy||!window.llm;
+  let h='';
+  const sevLabel={high:'Needs attention',medium:'Notable',low:'Minor',info:'Context'};
+  h+=ddCard('Key findings',`Ranked by importance, then by how sure the data lets us be. "Fact" = measured; "hypothesis" = a plausible explanation to test. Open any finding for its evidence.`,
+    d.findings.length?d.findings.map((f,i)=>`<details class="fnd ${f.severity}" ${i<3?'open':''}><summary><span class="tag ${f.severity==='high'?'high':f.severity==='medium'?'medium':''}">${sevLabel[f.severity]}</span><span class="t">${esc(f.title)}</span><span class="tag">${f.kind}</span><span class="tag">confidence: ${f.confidence}</span></summary>
+      <ul>${f.evidence.map(e=>`<li>${esc(e)}</li>`).join('')}</ul><div class="imp"><b>What it means:</b> ${esc(f.implication)}</div></details>`).join(''):'<div class="empty">No findings yet.</div>');
+  if(!m.reach){h+=ddCard('Reach data needed','Open the Reach tab and start collecting impressions and CTR. Until then this analysis only covers public and Analytics data.','');$('dd-body').innerHTML=h;return}
+  const v=d.visibility;
+  h+=ddCard('Visibility: how often YouTube shows your videos',`${v.window.from} to ${v.window.to} (${v.window.days} days). Red bars are spike days; the dashed line is the typical day without spikes.`,
+    `<div class="kpis" style="margin-bottom:14px"><div class="kpi"><div class="l">Impressions</div><div class="v">${fmt(v.total_impressions)}</div><div class="d">${v.mean_daily}/day average</div></div>
+     <div class="kpi"><div class="l">Typical day</div><div class="v">${v.baseline_daily_median_excl_spikes}</div><div class="d">median, spikes excluded</div></div>
+     <div class="kpi"><div class="l">From spike days</div><div class="v">${Math.round((v.spike_share_of_impressions||0)*100)}%</div><div class="d">${v.spike_days.length} day(s)</div></div>
+     <div class="kpi"><div class="l">Top 2 videos' share</div><div class="v">${pc(v.top2_video_share)}</div><div class="d">${v.videos_with_any_impressions} of ${v.videos_total} videos shown</div></div></div>
+     <div class="chartbox" style="height:240px"><canvas id="dd-c1"></canvas></div>`);
+  if(d.funnel){const f=d.funnel;
+    h+=ddCard('Funnel: what impressions turn into',`Reach and Analytics cut to the same 28 days (${f.window[0]} to ${f.window[1]}). Views can exceed clicks because subscribers, playlists, notifications and external links don't count as impressions.`,
+      `<div class="funnel"><div class="fstep"><b>${fmt(f.impressions)}</b><span>thumbnail impressions</span><em>CTR ${pc(f.ctr_pct)}</em></div>
+       <div class="fstep"><b>${fmt(f.clicks)}</b><span>clicks from impressions</span><em>${f.views_not_from_impressions_pct!=null?pc(f.views_not_from_impressions_pct)+' of views not from impressions':''}</em></div>
+       <div class="fstep"><b>${fmt(f.views)}</b><span>views (all sources)</span><em>${f.avg_view_duration_min!=null?f.avg_view_duration_min+' min avg view':''}</em></div>
+       <div class="fstep"><b>${fmt(f.watch_hours)}</b><span>watch hours</span></div></div>
+       <div class="hint" style="margin-top:10px">Per 1,000 impressions: <b style="color:var(--fg)">${f.views_per_1000_impressions??'–'} views</b> and <b style="color:var(--fg)">${f.watch_hours_per_1000_impressions??'–'} watch hours</b>.</div>`)}
+  const c=d.ctr,verd=Object.fromEntries(d.matrix.items.map(x=>[x.title,x.verdict]));
+  h+=ddCard('Click-through rate, with the uncertainty shown',`Overall ${pc(c.overall_pct)} (95% range ${pc(c.overall_ci_pct&&c.overall_ci_pct[0])}–${pc(c.overall_ci_pct&&c.overall_ci_pct[1])}) from ${fmt(c.clicks)} clicks. The bar under each video is its 95% range: wide bars mean the number is mostly noise. ${c.videos_significantly_different} of ${c.videos_tested} videos with 30+ impressions differ significantly from the rest.`,
+    `<div class="tbl"><table><thead><tr><th>Video</th><th class="n">Impr.</th><th class="n">Clicks</th><th class="n">CTR</th><th>95% range (0–40%)</th><th>Evidence</th><th class="n">Avg viewed</th><th>Verdict</th></tr></thead><tbody>`+
+    c.per_video.map(x=>`<tr><td style="max-width:300px"><a href="https://youtu.be/${esc(x.id)}" target="_blank" rel="noopener" style="text-decoration:none;font-weight:500">${esc(x.title.slice(0,70))}</a></td><td class="n">${fmt(x.impressions)}</td><td class="n">${x.clicks}</td><td class="n">${pc(x.ctr_pct)}</td>
+      <td>${x.ctr_ci_pct?ciBar(x.ctr_ci_pct[0],x.ctr_ci_pct[1],x.ctr_pct,x.tier==='insufficient'):''}</td><td>${tierTag(x.tier)}</td><td class="n">${pc(x.avg_view_pct)}</td><td style="font-size:12px;color:var(--fg2)">${esc(verd[x.title]||'')}</td></tr>`).join('')+`</tbody></table></div>
+     <div class="hint" style="margin-top:8px">Evidence: <b>solid</b> = 100+ impressions, <b>indicative</b> = 30–99, <b>insufficient</b> = under 30 (ignore the CTR). Verdicts combine shrunken CTR with average % viewed and are only given for videos with 30+ impressions.</div>
+     <div class="ddsub">Can you A/B test packaging at this reach?</div><div class="tbl"><table><thead><tr><th>To detect a CTR lift of</th><th class="n">From → to</th><th class="n">Impressions per variant</th><th class="n">Days at today's typical reach</th><th class="n">Daily impressions needed to do it in 28 days</th></tr></thead><tbody>`+
+    c.test_plan.map(p=>`<tr><td>+${p.relative_lift_pct}%</td><td class="n">${p.from_ctr_pct}% → ${p.to_ctr_pct}%</td><td class="n">${fmt(p.impressions_per_variant)}</td><td class="n ${p.days_at_baseline>90?'bad-t':'ok-t'}">${p.days_at_baseline==null?'–':fmt(p.days_at_baseline)}</td><td class="n">${fmt(p.daily_impressions_needed_for_28_days)}</td></tr>`).join('')+`</tbody></table></div>`);
+  const s=d.sources;
+  if(s.state==='ready'){const bar=(arr,n)=>arr.slice(0,n).map(x=>`<div class="hbar"><span>${esc(x.label)}</span><div class="t">${stack(['',(x.share||0)*100])}</div><b>${Math.round((x.share||0)*100)}%</b></div><div class="hint" style="margin:-2px 0 6px 162px">CTR ${pc(x.ctr==null?null:Math.round(x.ctr*1000)/10)} · ${fmt(x.impressions)} impressions</div>`).join('');
+    h+=ddCard('Where impressions come from',`Traffic source, device and operating system, ${s.first_date} to ${s.last_date}.`,
+      `<div class="cols"><div><div class="ddsub" style="margin-top:0">Traffic source</div>${bar(s.by_source,8)}</div><div><div class="ddsub" style="margin-top:0">Device</div>${bar(s.by_device,6)}<div class="ddsub">Operating system</div>${bar(s.by_os,5)}</div></div>`+
+      Object.entries(s.source_detail).map(([k,v])=>`<div class="ddsub">${esc(k)} – top ${esc(v.meaning)}s</div><div class="tbl"><table><tbody>${v.top.map(t=>`<tr><td>${esc(t.detail)}</td><td class="n">${fmt(t.impressions)} impr.</td><td class="n">CTR ${pc(t.ctr==null?null:Math.round(t.ctr*1000)/10)}</td></tr>`).join('')}</tbody></table></div>`).join(''))}
+  else h+=ddCard('Where impressions come from',s.state==='waiting'?'Collection of the traffic-source and device breakdown has started. YouTube delivers the first files within about 48 hours; check again via Reach → Check for new reports.':'The breakdown report has not been set up yet. Open Reach and press Check for new reports.','');
+  h+=ddCard('Themes: what the videos share',`Words that recur in titles${d.themes.generic_words_ignored.length?` (ignoring words found in nearly every title: ${esc(d.themes.generic_words_ignored.join(', '))})`:''}, pooled across their videos. Small groups: treat as leads.`,
+    d.themes.items.length?`<div class="tbl"><table><thead><tr><th>Theme</th><th class="n">Videos</th><th class="n">Impressions</th><th class="n">Share</th><th class="n">CTR</th><th class="n">CTR, others</th><th class="n">Median avg viewed</th><th class="n">Subs +</th></tr></thead><tbody>`+
+    d.themes.items.map(t=>`<tr><td><b>${esc(t.theme)}</b><div class="vm">${esc(t.examples.join(' · '))}</div></td><td class="n">${t.videos}</td><td class="n">${fmt(t.impressions)}</td><td class="n">${pc(t.share_of_impressions)}</td><td class="n">${pc(t.ctr_pct)}</td><td class="n">${pc(t.ctr_rest_pct)}</td><td class="n">${pc(t.median_avg_view_pct==null?null:Math.round(t.median_avg_view_pct*10)/10)}</td><td class="n">${t.subs_gained}</td></tr>`).join('')+'</tbody></table></div>':'<div class="empty">No recurring themes found.</div>');
+  if(d.packaging_features.length)h+=ddCard('Title features vs reach',`Pooled across videos with and without each feature. p is for the CTR difference; with this few clicks almost nothing reaches significance.${d.age_vs_reach_spearman!=null?` Newer videos vs more impressions/day: Spearman ${d.age_vs_reach_spearman}.`:''}`,
+    `<div class="tbl"><table><thead><tr><th>Feature</th><th class="n">Videos with / without</th><th class="n">Impr. per video (with)</th><th class="n">(without)</th><th class="n">CTR with</th><th class="n">CTR without</th><th class="n">p</th></tr></thead><tbody>`+
+    d.packaging_features.map(f=>`<tr><td>${esc(f.feature)}</td><td class="n">${f.videos_with} / ${f.videos_without}</td><td class="n">${f.impressions_per_video_with}</td><td class="n">${f.impressions_per_video_without}</td><td class="n">${pc(f.ctr_with_pct)}</td><td class="n">${pc(f.ctr_without_pct)}</td><td class="n">${f.ctr_p??'–'}</td></tr>`).join('')+'</tbody></table></div>');
+  h+=ddCard('Limits of this analysis','',`<ul style="margin:0;padding-left:20px;color:var(--fg2)">${d.limits.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`);
+  $('dd-body').innerHTML=h;drawDDVis()}
+function drawDDVis(){
+  const el=$('dd-c1');if(!el||!DD||!DD.visibility||$('t-deepdive').classList.contains('hidden'))return;
+  if(ddChart)ddChart.destroy();const v=DD.visibility,tick=css('--mut'),grid=css('--grid');
+  ddChart=new Chart(el,{data:{labels:v.daily.map(x=>x.day),datasets:[
+    {type:'bar',data:v.daily.map(x=>x.impressions),backgroundColor:v.daily.map(x=>x.spike?css('--brand'):css('--bar')),borderRadius:2,order:2},
+    {type:'line',data:v.daily.map(()=>v.baseline_daily_median_excl_spikes),borderColor:css('--fg'),borderDash:[5,4],borderWidth:1.2,pointRadius:0,order:1}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>i.datasetIndex?`Typical day ${v.baseline_daily_median_excl_spikes}`:`${i.raw} impressions${v.daily[i.dataIndex].spike?' (spike)':''}`}}},
+      scales:{x:{ticks:{color:tick,maxTicksLimit:8,maxRotation:0},grid:{display:false}},y:{beginAtZero:true,ticks:{color:tick},grid:{color:grid},border:{display:false}}}}})}
+async function writeDeepDive(){
+  if(ddBusy||!channelId)return;
+  if(!window.llm){toast('Set ANTHROPIC_API_KEY in .env to write the AI deep dive',true);return}
+  ddBusy=true;const b=$('dd-ai');b.disabled=true;b.innerHTML='<span class="spin"></span>Analyzing thumbnails and data';
+  $('dd-ai-card').classList.remove('hidden');$('dd-ai-meta').textContent='This usually takes one to two minutes: the AI is reading your data and looking at your thumbnails.';
+  $('dd-ai-out').innerHTML='<div class="sk" style="height:18px;width:50%;margin-bottom:10px"></div><div class="sk" style="height:14px;margin-bottom:8px"></div><div class="sk" style="height:14px;width:88%;margin-bottom:8px"></div><div class="sk" style="height:14px;width:70%"></div>';
+  $('dd-ai-card').scrollIntoView({behavior:'smooth'});
+  try{const d=await api(`/api/channels/${encodeURIComponent(channelId)}/deepdive/report`,{as_of:asOf});
+    $('dd-ai-out').innerHTML=DOMPurify.sanitize(marked.parse(d.markdown));
+    $('dd-ai-meta').textContent=`${d.model} · ${d.meta.thumbnails_analyzed} thumbnails analyzed · ${fmt(d.meta.input_tokens)} tokens in, ${fmt(d.meta.output_tokens)} out${d.meta.stop_reason==='max_tokens'?' · cut off at the length limit':''} · saved to Saved reports`;
+    loadReports()}
+  catch(e){$('dd-ai-out').innerHTML=`<div class="empty">${esc(e.message)}</div>`;$('dd-ai-meta').textContent='';toast(e.message,true)}
+  ddBusy=false;b.disabled=false;b.textContent='Write AI deep dive'}
+$('dd-ai').onclick=writeDeepDive;
 
 /* return from Google's consent screen */
 (async()=>{const q=new URLSearchParams(location.search);if(![...q.keys()].length)return;history.replaceState(null,'',location.pathname);

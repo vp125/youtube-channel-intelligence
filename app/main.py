@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import analytics, auth, db, reach, report, stats, youtube
+from . import analytics, auth, db, deepdive, reach, report, stats, youtube
 from .config import ROOT
 
 app = FastAPI(title="YouTube Channel Intelligence")
@@ -123,7 +123,7 @@ def snapshots(channel_id: str):
 def list_reports(channel_id: str):
     with db.connect() as con:
         rows = con.execute(
-            "SELECT id, created_at, snapshot_at, question, source, model FROM reports WHERE youtube_channel_id=? ORDER BY created_at DESC LIMIT 50",
+            "SELECT id, created_at, snapshot_at, question, source, model, kind FROM reports WHERE youtube_channel_id=? ORDER BY created_at DESC LIMIT 50",
             (channel_id,)).fetchall()
     return [dict(r) for r in rows]
 
@@ -150,11 +150,36 @@ def make_report(channel_id: str, req: AskReq):
     if "error" not in out:  # don't archive fallbacks caused by an LLM failure
         with db.connect() as con:
             cur = con.execute(
-                "INSERT INTO reports (youtube_channel_id, created_at, snapshot_at, question, source, model, markdown) VALUES (?,?,?,?,?,?,?)",
+                "INSERT INTO reports (youtube_channel_id, created_at, snapshot_at, question, source, model, markdown, kind) VALUES (?,?,?,?,?,?,?,?)",
                 (channel_id, youtube.now_iso(), s["channel"]["last_collected_at"], req.question,
-                 out["source"], out.get("model"), out["markdown"]))
+                 out["source"], out.get("model"), out["markdown"], "question" if req.question else "report"))
             out["id"] = cur.lastrowid
     return out
+
+
+@app.get("/api/channels/{channel_id}/deepdive")
+def deep_dive_data(channel_id: str, as_of: str | None = None):
+    """Deterministic diagnosis (free, instant, reproducible from stored data)."""
+    s = _stats(channel_id, as_of)
+    return {"deepdive": deepdive.build(s, channel_id, as_of), "llm_available": report.llm_available()}
+
+
+@app.post("/api/channels/{channel_id}/deepdive/report")
+def deep_dive_report(channel_id: str, req: AskReq):
+    """AI-written deep dive over the deterministic diagnosis plus the actual thumbnails. Saved like any report."""
+    if not report.llm_available():
+        raise HTTPException(400, "Set ANTHROPIC_API_KEY to generate the AI deep dive. The data diagnosis above works without it.")
+    s = _stats(channel_id, req.as_of)
+    dd = deepdive.build(s, channel_id, req.as_of)
+    try:
+        md, model, meta = report.deep_dive(s, dd)
+    except Exception as e:
+        raise HTTPException(502, f"AI deep dive failed: {e}")
+    with db.connect() as con:
+        cur = con.execute(
+            "INSERT INTO reports (youtube_channel_id, created_at, snapshot_at, question, source, model, markdown, kind) VALUES (?,?,?,?,?,?,?,?)",
+            (channel_id, youtube.now_iso(), s["channel"]["last_collected_at"], "Deep dive", "llm", model, md, "deep_dive"))
+    return {"id": cur.lastrowid, "markdown": md, "model": model, "meta": meta}
 
 
 @app.get("/api/usage")

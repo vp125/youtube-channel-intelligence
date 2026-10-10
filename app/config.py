@@ -11,6 +11,8 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 # Full reports need careful reasoning over many numbers; quick questions are cheap. Two knobs, two defaults.
 ANTHROPIC_MODEL_REPORT = os.getenv("ANTHROPIC_MODEL_REPORT", "claude-sonnet-5-5")
 ANTHROPIC_MODEL_QUESTION = os.getenv("ANTHROPIC_MODEL_QUESTION", "claude-haiku-4-5-20251001")
+# The deep dive is the one place worth the strongest reasoning; defaults to the report model, e.g. set claude-opus-5-5 for more depth.
+ANTHROPIC_MODEL_DEEPDIVE = os.getenv("ANTHROPIC_MODEL_DEEPDIVE", ANTHROPIC_MODEL_REPORT)
 DB_PATH = Path(os.getenv("DB_PATH", ROOT / "data" / "youtube.db"))
 # OAuth client for YouTube Analytics (V2). Create a "Web application" client in Google Cloud Console.
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")

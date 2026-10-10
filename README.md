@@ -36,7 +36,13 @@ Notes
   1. Also enable **YouTube Reporting API** in Google Cloud (APIs & Services > Library).
   2. Reach tab > **Start collecting** (creates a read-only reporting job on your channel; the first click is deliberate, Sync Analytics never creates it).
   3. YouTube backfills ~30 days and delivers the first files within ~48 hours; each later Sync Analytics or "Check for new reports" pulls new daily files. Files expire after 60 days, so the app copies the rows into its own table. History before the job was created can't be recovered.
-  CTR is impressions-weighted everywhere (never an average of daily rates); videos under 100 impressions are excluded from rankings. Disconnect deletes this data too.
+  CTR arrives as a fraction (verified on real files) and is impressions-weighted everywhere (never an average of daily rates); videos under 100 impressions are excluded from rankings. Disconnect deletes this data too.
+  Collection also creates a second job, `channel_reach_combined_a1`, which splits impressions and CTR by traffic source (with search terms / referring videos), device and OS. Its history starts when that job is created.
+
+## Deep dive (Reach tab > "Deep dive analysis", or the Deep dive tab)
+
+`app/deepdive.py` computes, deterministically and for free: visibility (baseline vs spike days), an aligned impressions > clicks > views > watch-time funnel, CTR with 95% intervals and multiple-comparison-aware significance, sample-size planning for A/B tests at your actual reach, source/device mix, title themes and features, a packaging-vs-content matrix, and a ranked list of findings with evidence and confidence.
+"Write AI deep dive" sends that diagnosis plus your actual thumbnails to the deep-dive model (`ANTHROPIC_MODEL_DEEPDIVE`, defaults to the report model; set e.g. `claude-opus-5-5` for more depth). It takes 1-2 minutes, uses roughly 40k input / 15k output tokens, and is saved under Saved reports. The AI may only use numbers from the diagnosis and must cite finding ids.
 - Analytics lags ~2 days; the per-video report returns the top 200 videos; retention curves are fetched for the top 8 videos.
 
 A full public sync of a ~1000-video channel costs ~40 Data API quota units (daily default 10,000).

@@ -160,5 +160,5 @@ def disconnect(channel_id: str):
     with db.connect() as con:
         con.execute("DELETE FROM oauth_tokens WHERE youtube_channel_id=?", (channel_id,))
         con.execute("DELETE FROM analytics_data WHERE youtube_channel_id=?", (channel_id,))
-        for t in ("reach_jobs", "reach_reports", "reach_daily"):  # impressions/CTR are owner-private too
+        for t in ("reach_jobs", "reach_reports", "reach_daily", "reach_breakdown"):  # impressions/CTR are owner-private too
             con.execute(f"DELETE FROM {t} WHERE youtube_channel_id=?", (channel_id,))
